@@ -16,15 +16,16 @@ export const effectivePdc = (x) => x?.pdcProjected ?? x?.pdc ?? x?.calcPdc ?? nu
 // plan's. Either way it is the absolute fail date.
 export const effectiveFailDate = (x) => x?.failDateProjected ?? x?.failDate ?? null;
 
-// Where each headline number comes from: the plan file, our calculation from
-// claims, or projected from a fill confirmed in Fold (pending its claim).
+// Where each headline number comes from: payer data (the health plan's data
+// file), our calculation from claims, or projected from a fill confirmed in
+// Fold (pending its claim).
 export const DATA_SOURCE_HINT = {
-  Plan: 'Sent by the plan',
+  'Payer data': "Sent in the health plan's data file",
   Calculated: 'Calculated by Fold from claims',
   Projected: 'Projected from a fill confirmed in Fold, pending a matching claim',
 };
-export const pdcSource = (x) => (x.pdcProjected != null ? 'Projected' : x.pdc != null ? 'Plan' : x.calcPdc != null ? 'Calculated' : null);
-export const failDateSource = (x) => (x.failDateProjected != null ? 'Projected' : x.failDate ? 'Plan' : null);
+export const pdcSource = (x) => (x.pdcProjected != null ? 'Projected' : x.pdc != null ? 'Payer data' : x.calcPdc != null ? 'Calculated' : null);
+export const failDateSource = (x) => (x.failDateProjected != null ? 'Projected' : x.failDate ? 'Payer data' : null);
 export const nextFillDueSource = (x) => (!x.nextFillDue ? null : x.pdcProjected != null ? 'Projected' : 'Calculated');
 export const FAIL_DATE_HINT = 'Absolute fail date: after this day the member can no longer reach 80% PDC this year';
 
@@ -54,8 +55,9 @@ export function daysFromToday(mdy) {
   return t == null ? null : Math.round((t - todayUtc()) / DAY_MS);
 }
 
-// A gap still needs work unless it is Completed (fill confirmed, waiting for
-// its claim) or Closed-Data (`done`). Only these drive a row's headline
+// A gap still needs work unless system data closed it (Closed-Data, `done`).
+// A fill confirmed in Fold does not count: it is projected until its claim
+// matches. Only these drive a row's headline
 // numbers and red risk: a picked-up MAD must not paint the row red while MAH
 // is the real gap.
 export const isActiveGap = (st) => !!st && !st.done;
@@ -252,21 +254,20 @@ function worstRecon(measures, plan) {
 // ── Measure status (gap closure) ──
 // Gap status (first line):
 //   Open         not worked this fill cycle
-//   In Progress  worked, or a confirmed fill whose claim did not match
-//   Completed    the current fill is confirmed in Fold (pickup or a date
-//                entered by hand) and waiting for its claim. Projected only.
+//   In Progress  worked, including a fill confirmed in Fold (a pickup or a
+//                Recent Fill date) waiting for its claim ("Pending claim",
+//                projected) or whose claim did not match
 //   Closed-Data  closed by system data: a matched Part D claim, or the plan
 //                file (Excluded, Adherent, 1 fill left)
-// Only Open and In Progress can be set by hand.
-export const GAP_STATUSES = ['Open', 'In Progress', 'Completed', 'Closed-Data'];
+// Nothing done in Fold closes a gap. Only Open and In Progress can be set by
+// hand.
+export const GAP_STATUSES = ['Open', 'In Progress', 'Closed-Data'];
 export const MANUAL_GAP_STATUSES = ['Open', 'In Progress'];
 export const GAP_STATUS_TONE = {
   'Open': 'white',
   'In Progress': 'primary',
-  'Completed': 'success',
   'Closed-Data': 'grey',
 };
-const SETTLED_GAPS = new Set(['Completed', 'Closed-Data']);
 
 // Sub-status (second line): a fixed list of short labels, most urgent first.
 export const MEASURE_STATUSES = [
@@ -324,7 +325,7 @@ function workedThisCycle(x, member) {
 }
 
 // Gap status + sub-status for one measure (see GAP_STATUSES). `done` means
-// nothing is owed on the gap right now (Completed or Closed-Data). A status
+// system data closed the gap (Closed-Data). A status
 // set by hand (`statusManual`, Open or In Progress) wins and puts the gap
 // back in play.
 export function measureStatus(x, member) {
@@ -334,7 +335,7 @@ export function measureStatus(x, member) {
 }
 
 function autoMeasureStatus(x, member) {
-  const status = (gap, sub) => ({ gap, ...sub, done: SETTLED_GAPS.has(gap) });
+  const status = (gap, sub) => ({ gap, ...sub, done: gap === 'Closed-Data' });
   if (x.excluded) return status('Closed-Data', { label: 'Excluded', detail: 'Excluded / safe for the year per plan file' });
   if (x.oneFillToInvincible) return status('Closed-Data', { label: '1 fill left', detail: 'Plan file: one more fill guarantees 80% PDC for the year' });
   if (x.projectedStatus === 'Already adherent') return status('Closed-Data', { label: 'Adherent', detail: 'Plan file: projected adherent for the year' });
@@ -351,7 +352,7 @@ function autoMeasureStatus(x, member) {
     return status('Closed-Data', { label: 'Claim matched', detail: `${match.worst.detail} · reopens ${x.nextFillDue}` });
   }
   if (covered) {
-    return status('Completed', { label: 'Pending claim', detail: `Projected until the claim arrives · ${match.worst.detail}` });
+    return status('In Progress', { label: 'Pending claim', detail: `Projected until the claim arrives · ${match.worst.detail}` });
   }
   const sub = measureSubStatus(x, member?.callHistory);
   return status(member && workedThisCycle(x, member) ? 'In Progress' : 'Open', sub);
@@ -370,7 +371,7 @@ export function gapStartDate(x) {
 export const PROGRESS_LEVELS = ['Not started', 'In progress', 'Partially complete', 'Complete'];
 export function gapProgress(statuses) {
   const gaps = Object.values(statuses).map(s => s.gap);
-  // Only system data closes a gap; Completed is still waiting for its claim.
+  // Only system data closes a gap.
   const closed = gaps.filter(g => g === 'Closed-Data').length;
   const label = !gaps.length || closed === gaps.length ? 'Complete'
     : closed > 0 ? 'Partially complete'
@@ -403,7 +404,6 @@ export function rollupGapStatus(statuses) {
   const gaps = Object.values(statuses).map(s => s.gap);
   if (!gaps.length) return 'Open';
   if (gaps.every(g => g === 'Closed-Data')) return 'Closed-Data';
-  if (gaps.every(g => SETTLED_GAPS.has(g))) return 'Completed';
   if (gaps.some(g => g !== 'Open')) return 'In Progress';
   return 'Open';
 }

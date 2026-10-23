@@ -14,7 +14,7 @@
 --      19404 MAH  reversal sent as negative quantity / days supply
 --      19405 MAC  fill entered by hand, no claim (Claim not matched)
 --      19406 MAH  fill entered by hand, claim billed to commercial coverage
---      19407 MAD  confirmed pickup, claim not arrived yet (Completed)
+--      19407 MAD  confirmed pickup, claim not arrived yet (Pending claim)
 --    Generated from src/features/pharmacy-worklist/data/mock.js.
 --    Replacing `measures` resets demo work stored on the gaps (manual
 --    statuses, confirmed fills); 19407 also gets its pickup call.

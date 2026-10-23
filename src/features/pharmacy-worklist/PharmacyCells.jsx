@@ -32,7 +32,7 @@ export function DateWithDays({ date, alert = false }) {
   );
 }
 
-// Where a number comes from (Plan, Calculated, Projected), on hover.
+// Where a number comes from (Payer data, Calculated, Projected), on hover.
 export function SourceTag({ source }) {
   if (!source) return null;
   return (
@@ -43,7 +43,7 @@ export function SourceTag({ source }) {
 }
 
 // Date alone; red when the caller says it needs action. `source` adds the
-// Plan / Calculated / Projected tag below; `hint` explains the date.
+// Payer data / Calculated / Projected tag below; `hint` explains the date.
 export function DateOnly({ date, alert = false, source, hint }) {
   if (!date) return <Dash />;
   const text = <span className={`${styles.dateText} ${alert ? styles.toneError : ''}`}>{date}</span>;
@@ -127,16 +127,16 @@ export function ProgressCell({ progress }) {
 
 // PDC of the row's focus measure, named so it is never ambiguous. Below the
 // 80% threshold on an open gap is said in words, not only in color.
-// `source`: Plan, Calculated (ours, from claims) or Projected (with a fill
-// confirmed in Fold); `planPdc` is shown on hover when it differs.
+// `source`: Payer data, Calculated (ours, from claims) or Projected (with a fill
+// confirmed in Fold); the payer's PDC is shown on hover when it differs.
 export function PdcValue({ pdc, code, open, source, planPdc }) {
   if (pdc == null) return <span className={styles.subText}>Not sent</span>;
   const below = open && pdcTone(pdc) === 'error';
   const value = <span className={styles.pdc}>{pdc}%</span>;
   return (
     <span className={styles.stack}>
-      {source !== 'Plan' && planPdc !== undefined
-        ? <Tooltip label={`Plan PDC ${planPdc == null ? 'not sent' : `${planPdc}%`}`} placement="bottom">{value}</Tooltip>
+      {source !== 'Payer data' && planPdc !== undefined
+        ? <Tooltip label={`Payer PDC ${planPdc == null ? 'not sent' : `${planPdc}%`}`} placement="bottom">{value}</Tooltip>
         : value}
       <span className={styles.subText}>
         {code ? `${code} · ` : ''}

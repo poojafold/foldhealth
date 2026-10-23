@@ -77,9 +77,9 @@ describe('measureStatus', () => {
     expect(st).toMatchObject({ gap: 'Closed-Data', label: 'Claim matched', done: true });
   });
 
-  it('is Completed, projected, while the confirmed fill waits for its claim', () => {
+  it('stays In Progress, projected, while the confirmed fill waits for its claim', () => {
     const st = measureStatus(fillMeasure({ filledDaysAgo: 3, supply: 30 }), { callHistory: [] });
-    expect(st).toMatchObject({ gap: 'Completed', label: 'Pending claim', done: true });
+    expect(st).toMatchObject({ gap: 'In Progress', label: 'Pending claim', done: false });
   });
 
   it('flags Claim not matched once the window passes with no claim', () => {

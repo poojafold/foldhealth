@@ -149,7 +149,7 @@
 .gapLinkName { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .gapLinkStatus { color: var(--neutral-300); }
 
-/* Plan / Calculated / Projected under a number. Projected is set apart:
+/* Payer data / Calculated / Projected under a number. Projected is set apart:
    it is not a closure until a claim matches. */
 .sourceTag {
   font-size: var(--font-sm);

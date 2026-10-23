@@ -96,7 +96,7 @@ export function PharmacyGapClosureStep() {
     <div className={styles.wrap}>
       <div className={styles.banner}>
         <Icon name="solar:refresh-circle-linear" size={16} color="var(--status-info)" />
-        <span>Closure repeats every fill. A confirmed pickup or a fill date entered here marks the gap Completed, but only as a projection: the gap closes (Closed-Data) when a matching Part D claim arrives, and is flagged for rework if none matches. It reopens when the next fill comes due or the claim reverses.</span>
+        <span>Closure repeats every fill. A confirmed pickup or a fill date entered here does not close the gap: it stays In Progress, with PDC and dates projected, until a matching Part D claim arrives (Closed-Data). It is flagged for rework if no claim matches. It reopens when the next fill comes due or the claim reverses.</span>
       </div>
 
       {measures.map(x => {
@@ -120,11 +120,11 @@ export function PharmacyGapClosureStep() {
             <div className={styles.detail}><SubStatus label={st.label} /><span>{st.detail}</span></div>
 
             <div className={styles.facts}>
-              <Fact label="PDC (Plan)" tone={risk(pdcTone(x.pdc))}>{x.pdc == null ? 'Not sent' : `${x.pdc}%`}</Fact>
+              <Fact label="PDC (Payer data)" tone={risk(pdcTone(x.pdc))}>{x.pdc == null ? 'Not sent' : `${x.pdc}%`}</Fact>
               <Fact label="PDC (Claims)" tone={risk(pdcTone(x.calcPdc))}>{x.calcPdc == null ? null : `${x.calcPdc}%`}</Fact>
               {x.pdcProjected != null && <Fact label="PDC (Projected, with recent fill)" tone={risk(pdcTone(x.pdcProjected))}>{`${x.pdcProjected}%`}</Fact>}
               <Fact label="Next Fill Due" tone={risk(fillDueTone(x.nextFillDue))}>{x.nextFillDue}</Fact>
-              <Fact label={x.failDateProjected ? 'Fail Date (Absolute, Projected)' : 'Fail Date (Absolute, Plan)'} tone={risk(failIn != null && failIn <= 14 ? 'error' : null)}>
+              <Fact label={x.failDateProjected ? 'Fail Date (Absolute, Projected)' : 'Fail Date (Absolute, Payer data)'} tone={risk(failIn != null && failIn <= 14 ? 'error' : null)}>
                 <span title={FAIL_DATE_HINT}>{failDate ? `${failDate}${failIn != null ? ` · ${failIn}d` : ''}` : null}</span>
               </Fact>
               <Fact label="Last Fill Date">{latestDate(x.medications.filter(d => d.status !== 'Discontinued').map(d => d.lastFill))}</Fact>

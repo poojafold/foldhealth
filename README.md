@@ -39,8 +39,8 @@ build requires esbuild ≥ 0.28 on Node 26.
 
 - **Pharmacy claim reversals and projected fills.** A confirmed pickup or a
   fill date entered by hand recalculates PDC, next fill and the absolute fail
-  date, and the gap shows Completed with a Projected tag until a matching
-  Part D claim arrives (then Closed-Data). No claim inside the plan's window,
+  date, and the gap stays In Progress (Pending claim, Projected) until a
+  matching Part D claim arrives (then Closed-Data). No claim inside the plan's window,
   a reversed claim or a claim billed to other coverage flags the gap "Claim
   not matched"; the flag opens that drug's claim history next to outreach
   logging and creates a rework task. Reversed, cancelled, deleted and
@@ -48,7 +48,7 @@ build requires esbuild ≥ 0.28 on Node 26.
   resubmitted claim counts. Claim history tells each fill's story (billed,
   reversed, rebilled, other coverage) with transaction fields marked pending
   Astrana's confirmation, and lists pharmacy-confirmed pickups, now their own
-  records, apart from claims. The worklist adds Plan / Calculated / Projected
+  records, apart from claims. The worklist adds Payer data / Calculated / Projected
   tags on PDC, Next Fill Due and Fail Date, Prior Year PDC per gap, and a
   hidden Fills to Stay Compliant column.
   Migration: `supabase/pharmacy_claim_history_migration.sql`.
